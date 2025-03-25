@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 // import react Navigation
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
 
 // import the screens we want to navigate
 import Start from './components/Start';

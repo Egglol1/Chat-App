@@ -7,6 +7,8 @@ import {
   TextInput,
   ImageBackground,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 //the equivalent to a login screen, first one we see
@@ -23,15 +25,18 @@ const Start = ({ navigation }) => {
   ];
 
   return (
+    //This is the background image of teh app, its a few people smiling together
     <ImageBackground
       source={require('../assets/background.png')}
       style={styles.backgroundMain}
     >
       <View>
+        {/*The title of the app, what's there to say?*/}
         <Text style={styles.appTitle}>App Title</Text>
       </View>
       <View style={styles.container}>
         <View style={styles.inputContainer}>
+          {/*Where the user will enter their username, kind of like a login area */}
           <TextInput
             style={styles.textInput}
             value={name || ''}
@@ -46,6 +51,10 @@ const Start = ({ navigation }) => {
             {/*Buttons to select the background color, each button, when selected, will send its color to the next screen*/}
             {colorStyles.map((item, index) => (
               <TouchableOpacity
+                accessible={true}
+                accessibilityLabel="Color"
+                accessibilityHint="Lets you choose the background color of the next page."
+                accessibilityRole="button"
                 key={index}
                 style={[
                   styles.bgColorBtn,
@@ -53,10 +62,11 @@ const Start = ({ navigation }) => {
                   color === item.color && styles.selected,
                 ]}
                 onPress={() => setColor(item.color)}
-              ></TouchableOpacity>
+              />
             ))}
           </View>
         </View>
+        {/*If TextInput is the login textbox, this is the button to log in, it'll send you to the chat screen */}
         <Button
           title="Start Chatting"
           onPress={() =>
@@ -64,11 +74,19 @@ const Start = ({ navigation }) => {
           }
           style={styles.button}
         />
+        {/*This makes sure the keyboard doesn't cover up any of the input elements */}
+        {Platform.OS === 'android' ? (
+          <KeyboardAvoidingView behavior="height" />
+        ) : null}
+        {Platform.OS === 'ios' ? (
+          <KeyboardAvoidingView behavior="padding" />
+        ) : null}
       </View>
     </ImageBackground>
   );
 };
 
+//These styles are all named for which component they link to
 const styles = StyleSheet.create({
   backgroundMain: {
     flex: 1,
