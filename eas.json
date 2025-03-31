@@ -10,8 +10,22 @@
       "environment": "development"
     },
     "preview": {
+      "android": {
+        "buildType": "apk"
+      },
       "distribution": "internal",
       "environment": "preview"
+    },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "preview3": {
+      "developmentClient": true
+    },
+    "preview4": {
+      "distribution": "internal"
     },
     "production": {
       "autoIncrement": true,
