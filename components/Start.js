@@ -10,9 +10,27 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 //the equivalent to a login screen, first one we see
 const Start = ({ navigation }) => {
+  const auth = getAuth();
+
+  const signInUser = () => {
+    signInAnonymously(auth)
+      .then((result) => {
+        navigation.navigate('ShoppingLists', {
+          userID: result.user.uid,
+          name: name,
+          color: color,
+        });
+        Alert.alert('Signed in Successfully!');
+      })
+      .catch((error) => {
+        Alert.alert('Unable to sign in, try later again.');
+      });
+  };
+
   //state variables which store the user's name and the background color they choose
   const [name, setName] = useState('');
   const [color, setColor] = useState('');
@@ -69,9 +87,9 @@ const Start = ({ navigation }) => {
         {/*If TextInput is the login textbox, this is the button to log in, it'll send you to the chat screen */}
         <Button
           title="Start Chatting"
-          onPress={() =>
-            navigation.navigate('Chat', { name: name }, { color: color })
-          }
+          onPress={() => {
+            signInUser;
+          }}
           style={styles.button}
         />
         {/*This makes sure the keyboard doesn't cover up any of the input elements */}
