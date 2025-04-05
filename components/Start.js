@@ -15,32 +15,28 @@ import { getAuth, signInAnonymously } from 'firebase/auth';
 //the equivalent to a login screen, first one we see
 const Start = ({ navigation }) => {
   const auth = getAuth();
+  //state variables which store the user's name and the background color they choose
+  const [name, setName] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
 
   const signInUser = () => {
     signInAnonymously(auth)
       .then((result) => {
-        navigation.navigate('ShoppingLists', {
+        navigation.navigate('Chat', {
           userID: result.user.uid,
           name: name,
-          color: color,
+          color: selectedColor,
         });
         Alert.alert('Signed in Successfully!');
       })
       .catch((error) => {
-        Alert.alert('Unable to sign in, try later again.');
+        Alert.alert('Unable to sign in, try again later.');
+        console.log(error);
       });
   };
 
-  //state variables which store the user's name and the background color they choose
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('');
-
-  const colorStyles = [
-    { color: '#090C08', styleKey: 'black' },
-    { color: '#474056', styleKey: 'darkGray' },
-    { color: '#8A95A5', styleKey: 'gray' },
-    { color: '#B9C6AE', styleKey: 'lightGreen' },
-  ];
+  const colorOptions = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
+  const colorLabels = ['Black', 'Purple', 'Blue', 'Green'];
 
   return (
     //This is the background image of teh app, its a few people smiling together
@@ -67,19 +63,20 @@ const Start = ({ navigation }) => {
           <Text style={{ color: '#757083' }}>Choose Background Color:</Text>
           <View style={styles.bgColorContainer}>
             {/*Buttons to select the background color, each button, when selected, will send its color to the next screen*/}
-            {colorStyles.map((item, index) => (
+            {colorOptions.map((color, index) => (
               <TouchableOpacity
-                accessible={true}
-                accessibilityLabel="Color"
-                accessibilityHint="Lets you choose the background color of the next page."
-                accessibilityRole="button"
-                key={index}
+                accessibilityLabel={`Color: ${colorLabels[index]}`}
+                key={`color-button__${color}`}
+                title="Got to Screen 2"
                 style={[
                   styles.bgColorBtn,
-                  styles[item.styleKey],
-                  color === item.color && styles.selected,
+                  { backgroundColor: color },
+                  selectedColor === color && {
+                    borderWidth: 2,
+                    borderColor: '#757083',
+                  },
                 ]}
-                onPress={() => setColor(item.color)}
+                onPress={() => setSelectedColor(color)}
               />
             ))}
           </View>
@@ -88,7 +85,11 @@ const Start = ({ navigation }) => {
         <Button
           title="Start Chatting"
           onPress={() => {
-            signInUser;
+            if (name === '') {
+              Alert.alert('Please type a username!');
+            } else {
+              signInUser();
+            }
           }}
           style={styles.button}
         />
