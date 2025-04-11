@@ -9,9 +9,11 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
 //the actual chat component
-const Chat = ({ route, navigation, db, isConnected }) => {
+const Chat = ({ route, navigation, db, isConnected, Storage }) => {
   const [messages, setMessages] = useState([]);
   const { name, color, userID } = route.params;
 
@@ -48,8 +50,14 @@ const Chat = ({ route, navigation, db, isConnected }) => {
   }, [isConnected]);
 
   const loadCachedMessages = async () => {
-    const cahcedMessages = (await AsyncStorage.getItem('messages')) || [];
-    setMessages(JSON.parse(cahcedMessages));
+    try {
+      const cachedMessages = (await AsyncStorage.getItem('messages')) || [];
+      if (cachedMessages) {
+        setMessages(JSON.parse(cachedMessages));
+      }
+    } catch (error) {
+      console.error('Error loading cached messages', error);
+    }
   };
 
   const cacheMessages = async (messagesToCache) => {
@@ -88,6 +96,35 @@ const Chat = ({ route, navigation, db, isConnected }) => {
     );
   };
 
+  const renderCustomActions = (props) => {
+    return (
+      <CustomActions
+        onSend={onSend}
+        storage={Storage}
+        userID={userID}
+        {...props}
+      />
+    );
+  };
+
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <MapView
+          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+    return null;
+  };
+
   //Renders the chatroom as a view that takes up the whole screen, and a giftedchat component
   return (
     <View style={[styles.container, { backgroundColor: color }]}>
@@ -96,6 +133,8 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
         onSend={(messages) => onSend(messages)}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         user={{
           _id: userID,
           name: name,

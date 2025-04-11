@@ -13,6 +13,7 @@ import {
   enableNetwork,
   disableNetwork,
 } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // import the screens we want to navigate
 import Start from './components/Start';
@@ -41,6 +42,7 @@ const App = () => {
 
   //Initialize cloud firestore and get reference for the service
   const db = getFirestore(app);
+  const Storage = getStorage(app);
 
   useEffect(() => {
     if (netInfo.isConnected === false) {
@@ -57,7 +59,12 @@ const App = () => {
         <Stack.Screen name="Start" component={Start} />
         <Stack.Screen name="Chat">
           {(props) => (
-            <Chat isConnected={netInfo.isConnected} db={db} {...props} />
+            <Chat
+              isConnected={netInfo.isConnected}
+              db={db}
+              storage={Storage}
+              {...props}
+            />
           )}
         </Stack.Screen>
       </Stack.Navigator>
