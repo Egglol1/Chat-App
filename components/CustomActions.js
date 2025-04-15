@@ -1,4 +1,4 @@
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet, Alert } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 //Allows usage of images
 import * as ImagePicker from 'expo-image-picker';
