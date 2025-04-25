@@ -17,7 +17,7 @@ const Start = ({ navigation }) => {
   const auth = getAuth();
   //state variables which store the user's name and the background color they choose
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedColor, setSelectedColor] = useState('white');
 
   const signInUser = () => {
     signInAnonymously(auth)
@@ -46,7 +46,7 @@ const Start = ({ navigation }) => {
     >
       <View>
         {/*The title of the app, what's there to say?*/}
-        <Text style={styles.appTitle}>App Title</Text>
+        <Text style={styles.appTitle}>The Chatler</Text>
       </View>
       <View style={styles.container}>
         <View style={styles.inputContainer}>

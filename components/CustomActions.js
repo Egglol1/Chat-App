@@ -44,11 +44,36 @@ const CustomActions = ([
 
   const pickImage = async () => {
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (permissions?.granted) {
       let result = await ImagePicker.launchImageLibraryAsync();
-      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri);
-      else Alert.alert("Permissions haven't been granted.");
+      if (!result.canceled) {
+        const imageURI = result.assets[0].uri;
+        const uniqueRefString = generateReference(imageURI);
+        const response = await fetch(imageURI);
+        const blob = await response.blob();
+        const newUploadRef = ref(storage, uniqueRefString);
+
+        uploadBytes(newUploadRef, blob).then(async (snapshot) => {
+          console.log('File has been uploaded');
+          const imageURL = await getDownloadURL(snapshot.ref);
+
+          // Send image message
+          onSend([
+            {
+              _id: Math.random().toString(36).substring(7),
+              createdAt: new Date(),
+              user: {
+                _id: user?._id || 'Anonymous',
+                name: user?.name || 'Anonymous',
+              },
+              image: imageURL, // Ensure image is sent
+              text: '', // Prevent empty messages from failing
+            },
+          ]);
+        });
+      } else {
+        Alert.alert("Permissions haven't been granted.");
+      }
     }
   };
 
@@ -63,20 +88,60 @@ const CustomActions = ([
   };
 
   const getLocation = async () => {
-    let permissions = await Location.requestForegroundPermissionsAsync();
+    console.log('Starting getLocation function');
 
-    if (permissions?.granted) {
-      const location = await Location.getCurrentPositionAsync({});
-      if (location) {
-        onSend({
-          location: {
-            longitude: location.coords.longitude,
-            latitude: location.coords.latitude,
-          },
-        });
-      } else Alert.alert('Error occurred while fetching location');
-    } else {
-      Alert.alert("Permissions to read location aren't granted");
+    try {
+      let permissions = await Location.requestForegroundPermissionsAsync();
+      console.log('Location permissions result:', permissions);
+
+      if (!permissions.granted) {
+        console.error('Location permission not granted!');
+        Alert.alert('Location permission not granted.');
+        return;
+      }
+
+      console.log('Requesting location...');
+
+      // Set timeout to prevent infinite waiting
+      const location = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Location request timed out')),
+            5000
+          )
+        ),
+      ]);
+
+      console.log('Location fetched:', location);
+
+      if (!location || !location.coords) {
+        console.error('Location data is missing or undefined');
+        Alert.alert('Error fetching location data.');
+        return;
+      }
+
+      const validUser = {
+        _id: user?._id || 'Anonymous',
+        name: user?.name || 'Anonymous',
+      };
+
+      const locationMessage = {
+        _id: Math.random().toString(36).substring(7),
+        createdAt: new Date(),
+        user: validUser,
+        location: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        text: 'Sent a location',
+      };
+
+      console.log('Sending location message:', locationMessage);
+      onSend([locationMessage]);
+    } catch (error) {
+      console.error('Error in getLocation:', error);
+      Alert.alert('Error fetching location:', error.message);
     }
   };
 
@@ -96,14 +161,23 @@ const CustomActions = ([
       async (buttonIndex) => {
         switch (buttonIndex) {
           case 0:
+            console.log('User wants to pick an image');
             pickImage();
-            return;
+            break;
           case 1:
+            console.log('User wants to take a photo');
             takePhoto();
-            return;
+            break;
           case 2:
-            getLocation();
+            console.log('User wants to get their location');
+            if (onSend) {
+              getLocation();
+            } else {
+              console.error('onSend is not defined!');
+            }
+            break;
           default:
+            console.log('Action canceled');
         }
       }
     );
