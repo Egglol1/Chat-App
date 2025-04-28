@@ -9,13 +9,13 @@ import * as Location from 'expo-location';
 //Allows usage of firebase storage
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
-const CustomActions = ([
+const CustomActions = ({
   wrapperStyle,
   iconTextStyle,
   onSend,
   storage,
   userID,
-]) => {
+}) => {
   const actionSheet = useActionSheet();
 
   const generateReference = (uri) => {
