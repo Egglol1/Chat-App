@@ -89,7 +89,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
           _id: message._id,
           text: message.text || '',
           user: validUser,
-          createdAt: serverTimestamp(),
+          createdAt: new Date(),
         };
 
         if (message.location) {
