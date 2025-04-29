@@ -1,5 +1,12 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  Image,
+} from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import {
   collection,
@@ -15,39 +22,50 @@ import MapView from 'react-native-maps';
 //the actual chat component
 const Chat = ({ route, navigation, db, isConnected, Storage }) => {
   const [messages, setMessages] = useState([]);
-  const { name, color, userID } = route.params;
+  const { name, color = 'white', userID } = route.params || {};
 
   useEffect(() => {
     //This sets the title of the page to be the username entered in Start.js
     navigation.setOptions({ title: name, color: color, userID: userID });
   });
 
-  let unsubMessages;
+  let unsubMessages = useRef(null);
   useEffect(() => {
     if (isConnected) {
       //unregister current listener to avoid registering multiple as useEffect gets re-executed
-      if (unsubMessages) unsubMessages();
-      unsubMessages = null;
-
+      if (unsubMessages.current) unsubMessages.current();
       const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-      unsubMessages = onSnapshot(q, (docs) => {
-        let newMessages = [];
-        docs.forEach((doc) => {
-          newMessages.push({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: new Date(doc.data().createdAt.toMillis()),
-          });
+      unsubMessages.current = onSnapshot(q, async (snapshot) => {
+        const newMessages = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            _id: doc.id,
+            text: data.text || '',
+            user: {
+              _id: data.user?._id || 'Anonymous',
+              name: data.user?.name || 'Anonymous',
+            },
+            createdAt: data.createdAt?.toMillis
+              ? new Date(data.createdAt.toMillis())
+              : new Date(),
+            location: data.location || null,
+            image: data.image || null,
+          };
         });
         cacheMessages(newMessages);
+        try {
+          await AsyncStorage.setItem('messages', JSON.stringify(newMessages));
+        } catch (error) {
+          console.error('AsyncStorage Save Error:', error);
+        }
         setMessages(newMessages);
       });
     } else loadCachedMessages();
 
     return () => {
-      if (unsubMessages) unsubMessages();
+      if (unsubMessages.current) unsubMessages.current();
     };
-  }, [isConnected]);
+  }, [db, navigation, name, isConnected]);
 
   const loadCachedMessages = async () => {
     try {
@@ -254,6 +272,8 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    justifyContent: 'center',
   },
   offlineText: { fontSize: 16, textAlign: 'center', margin: 20 },
 });
