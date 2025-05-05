@@ -20,7 +20,7 @@ import CustomActions from './CustomActions';
 import MapView from 'react-native-maps';
 
 //the actual chat component
-const Chat = ({ route, navigation, db, isConnected, Storage }) => {
+const Chat = ({ route, navigation, db, isConnected, storage }) => {
   const [messages, setMessages] = useState([]);
   const { name, color = 'white', userID } = route.params || {};
 
@@ -35,6 +35,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
       //unregister current listener to avoid registering multiple as useEffect gets re-executed
       if (unsubMessages.current) unsubMessages.current();
       const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+
       unsubMessages.current = onSnapshot(q, async (snapshot) => {
         const newMessages = snapshot.docs.map((doc) => {
           const data = doc.data();
@@ -52,15 +53,13 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
             image: data.image || null,
           };
         });
-        cacheMessages(newMessages);
-        try {
-          await AsyncStorage.setItem('messages', JSON.stringify(newMessages));
-        } catch (error) {
-          console.error('AsyncStorage Save Error:', error);
-        }
+
         setMessages(newMessages);
+        cacheMessages(newMessages);
       });
-    } else loadCachedMessages();
+    } else {
+      loadCachedMessages();
+    }
 
     return () => {
       if (unsubMessages.current) unsubMessages.current();
@@ -94,6 +93,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
 
   //When you send a message, this function runs and adds your message to the stored array of messages
   const onSend = async (newMessages = []) => {
+    console.log('onSend started');
     newMessages.forEach(async (message) => {
       console.log('Processing message in onSend:', message); // debug log
 
@@ -125,6 +125,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
         console.error('Error sending message:', error);
       }
     });
+    console.log('Message sent!');
   };
 
   //Turns the left speech bubble white and the right bubble black, also catches unusual message types
@@ -198,7 +199,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
         {...props}
         user={{ _id: userID || 'Anonymous', name: name || 'Anonymous' }}
         onSend={onSend}
-        storage={Storage}
+        storage={storage}
       />
     );
   };
@@ -259,7 +260,7 @@ const Chat = ({ route, navigation, db, isConnected, Storage }) => {
         </>
       )}
       {/*These compressed if statements make sure the keyboard doesn't block the input element*/}
-      {Platform.OS === 'andriod' ? (
+      {Platform.OS === 'android' ? (
         <KeyboardAvoidingView behavior="height" />
       ) : null}
       {Platform.OS === 'ios' ? (

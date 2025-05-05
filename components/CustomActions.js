@@ -14,14 +14,14 @@ const CustomActions = ({
   iconTextStyle,
   onSend,
   storage,
-  userID,
+  user,
 }) => {
   const actionSheet = useActionSheet();
 
   const generateReference = (uri) => {
     const timeStamp = new Date().getTime();
-    const imageName = uri.split('/')[uri.split('/').length - 1];
-    return `${userID}-${timeStamp}-${imageName}`;
+    const imageName = uri.split('/').pop();
+    return `${user._id}-${timeStamp}-${imageName}`;
   };
 
   const uploadAndSendImage = async (imageURI) => {
@@ -32,9 +32,18 @@ const CustomActions = ({
       const blob = await response.blob();
       uploadBytes(newUploadRef, blob).then(async (snapshot) => {
         const imageURL = await getDownloadURL(snapshot.ref);
-        onSend({
-          image: imageURL, // Correct field for GiftedChat image messages
-        });
+        console.log(imageURL);
+        onSend([
+          {
+            _id: Math.round(Math.random() * 1000000), // Ensure unique ID
+            createdAt: new Date(),
+            user: {
+              _id: user._id,
+              name: user.name,
+            },
+            image: imageURL, // Correct field for GiftedChat image messages
+          },
+        ]);
       });
     } catch (error) {
       console.error('Image upload failed: ', error);
@@ -48,29 +57,7 @@ const CustomActions = ({
       let result = await ImagePicker.launchImageLibraryAsync();
       if (!result.canceled) {
         const imageURI = result.assets[0].uri;
-        const uniqueRefString = generateReference(imageURI);
-        const response = await fetch(imageURI);
-        const blob = await response.blob();
-        const newUploadRef = ref(storage, uniqueRefString);
-
-        uploadBytes(newUploadRef, blob).then(async (snapshot) => {
-          console.log('File has been uploaded');
-          const imageURL = await getDownloadURL(snapshot.ref);
-
-          // Send image message
-          onSend([
-            {
-              _id: Math.random().toString(36).substring(7),
-              createdAt: new Date(),
-              user: {
-                _id: user?._id || 'Anonymous',
-                name: user?.name || 'Anonymous',
-              },
-              image: imageURL, // Ensure image is sent
-              text: '', // Prevent empty messages from failing
-            },
-          ]);
-        });
+        await uploadAndSendImage(imageURI);
       } else {
         Alert.alert("Permissions haven't been granted.");
       }
